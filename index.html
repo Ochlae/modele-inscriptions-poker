@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Application Poker Club</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial;
+    background: radial-gradient(circle, #1f4d1f, #071807);
+    color: white;
+}
+.container {
+    max-width: 600px;
+    margin: auto;
+    padding: 10px;
+}
+button { padding:10px; width:100%; margin:5px 0;}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1 id="titreClub"></h1>
+
+<input id="nom" placeholder="Pseudo">
+<button onclick="inscrire()">Inscrire</button>
+
+<select id="listeSelect"></select>
+<button onclick="desinscrire()">Désinscrire</button>
+
+<div id="compteur"></div>
+
+</div>
+
+<script>
+// ===== CONFIG CLUB =====
+
+const NOM_CLUB = "CLUB TEST";
+const BASE_JOUEURS = "joueurs_test";
+const BASE_CONFIG = "config_test";
+const BASE_ADMIN = "admin_test";
+const MEMOIRE_LOCALE = "memoire_test";
+const CODE_ADMIN = "code2026";
+
+// ===== FIREBASE (NE PAS TOUCHER) =====
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDANUdOf2ui5gfuvdOMPfOX_SVaEcoT7-8",
+  authDomain: "pexiora-poker-inscriptrions.firebaseapp.com",
+  databaseURL: "https://pexiora-poker-inscriptrions-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "pexiora-poker-inscriptrions"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const ref = firebase.database().ref(BASE_JOUEURS);
+
+let joueurs = [];
+
+document.getElementById("titreClub").innerText = NOM_CLUB;
+
+ref.on("value", snap => {
+    joueurs = snap.val() || [];
+    afficher();
+});
+
+function inscrire() {
+    let nom = document.getElementById("nom").value;
+    joueurs.push(nom);
+    ref.set(joueurs);
+}
+
+function desinscrire() {
+    let pseudo = document.getElementById("listeSelect").value;
+    joueurs = joueurs.filter(j => j !== pseudo);
+    ref.set(joueurs);
+}
+
+function afficher() {
+    document.getElementById("compteur").innerText = joueurs.length + " joueurs";
+    document.getElementById("listeSelect").innerHTML =
+        joueurs.map(j => `<option>${j}</option>`).join("");
+}
+</script>
+
+</body>
+</html>
