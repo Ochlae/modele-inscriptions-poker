@@ -9,15 +9,44 @@
 body {
     margin: 0;
     font-family: Arial;
-    background: radial-gradient(circle, #1f4d1f, #071807);
+    background: radial-gradient(circle at center, #1f4d1f, #071807);
     color: white;
 }
 .container {
-    max-width: 600px;
+    max-width: 620px;
     margin: auto;
-    padding: 10px;
+    padding: 14px;
 }
-button { padding:10px; width:100%; margin:5px 0;}
+.logo {
+    width: 120px;
+    display: block;
+    margin: 10px auto;
+}
+h1 {
+    text-align: center;
+    color: gold;
+}
+.card {
+    background: rgba(0,0,0,0.5);
+    border-radius: 15px;
+    padding: 15px;
+    margin: 10px 0;
+}
+input, button, select {
+    width: 100%;
+    padding: 12px;
+    margin: 5px 0;
+    border-radius: 8px;
+    border: none;
+}
+.inscrire { background: green; color:white;}
+.desinscrire { background: red; color:white;}
+.admin { background: #444; color:white;}
+#compteur {
+    text-align:center;
+    font-size:20px;
+    margin:10px;
+}
 </style>
 </head>
 
@@ -25,29 +54,49 @@ button { padding:10px; width:100%; margin:5px 0;}
 
 <div class="container">
 
+<img src="logo.png" class="logo">
+
 <h1 id="titreClub"></h1>
 
+<div id="compteur">Connexion...</div>
+
+<div class="card">
 <input id="nom" placeholder="Pseudo">
-<button onclick="inscrire()">Inscrire</button>
+<button class="inscrire" onclick="inscrire()">Inscrire</button>
+</div>
 
-<select id="listeSelect"></select>
-<button onclick="desinscrire()">Désinscrire</button>
+<div class="card">
+<select id="selectDesinscrire"></select>
+<button class="desinscrire" onclick="desinscrire()">Désinscrire</button>
+</div>
 
-<div id="compteur"></div>
+<div class="card">
+<div id="liste"></div>
+<div id="attente"></div>
+</div>
+
+<div class="card">
+<input type="password" id="adminCode" placeholder="Code admin">
+<input type="number" id="nbPlaces" placeholder="Nombre de places">
+<button class="admin" onclick="changerPlaces()">Modifier places</button>
+<button class="admin" onclick="resetTournoi()">Reset tournoi</button>
+</div>
 
 </div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
 <script>
 // ===== CONFIG CLUB =====
 
-const NOM_CLUB = "CLUB TEST";
-const BASE_JOUEURS = "joueurs_test";
-const BASE_CONFIG = "config_test";
-const BASE_ADMIN = "admin_test";
-const MEMOIRE_LOCALE = "memoire_test";
-const CODE_ADMIN = "code2026";
+const NOM_CLUB = "BRAM POKER CLUB";
+const BASE_JOUEURS = "joueurs_bram";
+const BASE_CONFIG = "config_bram";
+const MEMOIRE_LOCALE = "mesJoueursBram";
+const CODE_ADMIN = "bramclub2026";
 
-// ===== FIREBASE (NE PAS TOUCHER) =====
+// ===== FIREBASE =====
 
 const firebaseConfig = {
   apiKey: "AIzaSyDANUdOf2ui5gfuvdOMPfOX_SVaEcoT7-8",
@@ -59,8 +108,10 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 
 const ref = firebase.database().ref(BASE_JOUEURS);
+const configRef = firebase.database().ref(BASE_CONFIG);
 
 let joueurs = [];
+let places = 64;
 
 document.getElementById("titreClub").innerText = NOM_CLUB;
 
@@ -69,22 +120,58 @@ ref.on("value", snap => {
     afficher();
 });
 
+configRef.on("value", snap => {
+    let data = snap.val();
+    if (data && data.places) places = data.places;
+    afficher();
+});
+
 function inscrire() {
     let nom = document.getElementById("nom").value;
+    if (!nom) return;
+
     joueurs.push(nom);
     ref.set(joueurs);
+
+    document.getElementById("nom").value = "";
 }
 
 function desinscrire() {
-    let pseudo = document.getElementById("listeSelect").value;
+    let pseudo = document.getElementById("selectDesinscrire").value;
     joueurs = joueurs.filter(j => j !== pseudo);
     ref.set(joueurs);
 }
 
+function changerPlaces() {
+    let code = document.getElementById("adminCode").value;
+    if (code !== CODE_ADMIN) return alert("Code incorrect");
+
+    let nb = parseInt(document.getElementById("nbPlaces").value);
+    configRef.set({ places: nb });
+}
+
+function resetTournoi() {
+    let code = document.getElementById("adminCode").value;
+    if (code !== CODE_ADMIN) return alert("Code incorrect");
+
+    ref.set([]);
+}
+
 function afficher() {
-    document.getElementById("compteur").innerText = joueurs.length + " joueurs";
-    document.getElementById("listeSelect").innerHTML =
-        joueurs.map(j => `<option>${j}</option>`).join("");
+    let ins = joueurs.slice(0, places);
+    let att = joueurs.slice(places);
+
+    document.getElementById("compteur").innerText =
+        ins.length + " / " + places;
+
+    document.getElementById("liste").innerHTML =
+        ins.map((j,i)=> (i+1)+". "+j).join("<br>");
+
+    document.getElementById("attente").innerHTML =
+        att.map((j,i)=> (i+1)+". "+j).join("<br>");
+
+    document.getElementById("selectDesinscrire").innerHTML =
+        joueurs.map(j=>`<option>${j}</option>`).join("");
 }
 </script>
 
